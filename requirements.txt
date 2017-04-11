@@ -1,0 +1,8 @@
+appdirs==1.4.3
+DateTime==4.1.1
+packaging==16.8
+pyparsing==2.2.0
+pytz==2017.2
+requests==2.13.0
+six==1.10.0
+zope.interface==4.3.3
