@@ -2,7 +2,7 @@ import requests
 import json
 from datetime import datetime
 
-# Build lists of issues with no updates for more than 14 and 30 days
+# Build lists of non-abandoned issues with no updates for > 14 days
 dateformat = '%Y-%m-%dT%H:%M:%S'
 now = datetime.strptime(datetime.utcnow().strftime(dateformat), dateformat)
 url = 'https://api.github.com/repos/open-austin/project-ideas/issues'
@@ -16,6 +16,14 @@ for i in range(numPages):
     issues = requests.get(url + '?page=' + pageNum).json()
     for i in range(len(issues)):
         issue = issues[i]
+        abandoned = False
+        for i in range(len(issue['labels'])):
+            label = issue['labels'][i]
+            if 'Abandoned and needs love' == label['name']:
+                abandoned = True
+                break
+        if abandoned:
+            continue
         updated_at = issue['updated_at'].replace('Z', '')
         then = datetime.strptime(updated_at, dateformat)
         daysSince = (now - then).days
@@ -26,5 +34,9 @@ for i in range(numPages):
             issues14[number] = issue
 
 # TODO: set actions here
-print len(issues30)
-print len(issues14)
+reply = 'Hi, could someone please post an update (even if it\'s just \'still working\') on this project idea? If we don\'t hear back in two weeks we will assume this project has been abandoned.'
+for issueNum in issues14.keys():
+    print 'reply to issue #' + str(issueNum)
+
+for issueNum in issues30.keys():
+    print 'add abandon label to issue #' + str(issueNum)
