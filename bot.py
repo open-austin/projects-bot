@@ -1,42 +1,62 @@
 import requests
 import json
+import os
+import sys
 from datetime import datetime
 
-# Build lists of non-abandoned issues with no updates for > 14 days
-dateformat = '%Y-%m-%dT%H:%M:%S'
-now = datetime.strptime(datetime.utcnow().strftime(dateformat), dateformat)
+# Important stuff
+test = 'test' in sys.argv
+abandonedLabel = 'Abandoned and needs love'
 url = 'https://api.github.com/repos/open-austin/project-ideas/issues'
-request = requests.get(url)
+headers = {'Authorization': 'token ' + os.environ['GITHUB_TOKEN']}
 issues14 = {}
 issues30 = {}
+updateComment = 'Hi, could someone please post an update (even if it\'s just \'still working\') on this project idea? If we don\'t hear back in two weeks we will assume this project has been abandoned.'
+
+# Build lists of non-abandoned issues with no updates
+dateformat = '%Y-%m-%dT%H:%M:%S'
+now = datetime.strptime(datetime.utcnow().strftime(dateformat), dateformat)
+request = requests.get(url, headers = headers)
 lastPage = request.links['last']['url']
 numPages = int(lastPage[len(lastPage) - 1])
 for i in range(numPages):
     pageNum = str(i+1)
-    issues = requests.get(url + '?page=' + pageNum).json()
+    issues = requests.get(url + '?page=' + pageNum, headers = headers).json()
     for i in range(len(issues)):
         issue = issues[i]
         abandoned = False
+        labels = []
         for i in range(len(issue['labels'])):
             label = issue['labels'][i]
-            if 'Abandoned and needs love' == label['name']:
+            labels.append(label['name'])
+            if abandonedLabel == label['name']:
                 abandoned = True
                 break
-        if abandoned:
-            continue
-        updated_at = issue['updated_at'].replace('Z', '')
-        then = datetime.strptime(updated_at, dateformat)
-        daysSince = (now - then).days
-        number = issue['number']
-        if daysSince > 30:
-            issues30[number] = issue
-        elif daysSince > 14:
-            issues14[number] = issue
+        if not abandoned:
+            updated_at = issue['updated_at'].replace('Z', '')
+            then = datetime.strptime(updated_at, dateformat)
+            daysSince = (now - then).days
+            number = issue['number']
+            if daysSince > 30:
+                issues30[number] = {'number': number, 'labels': labels}
+            elif daysSince > 14:
+                issues14[number] = {'number': number, 'labels': labels}
 
-# TODO: set actions here
-reply = 'Hi, could someone please post an update (even if it\'s just \'still working\') on this project idea? If we don\'t hear back in two weeks we will assume this project has been abandoned.'
+
+# Reply to 14-day old issues asking for updates
 for issueNum in issues14.keys():
-    print 'reply to issue #' + str(issueNum)
+    if test:
+        print ('reply to issue #' + str(issueNum))
+    else:
+        endpoint = url + '/' + str(issueNum) + '/comments'
+        r = requests.post(endpoint, json = {'body': updateComment}, headers = headers)
 
+# Add abandoned label to 30-day old isues
 for issueNum in issues30.keys():
-    print 'add abandon label to issue #' + str(issueNum)
+    if test:
+        print ('add abandon label to issue #' + str(issueNum))
+    else:
+        endpoint = url + '/' + str(issueNum)
+        newLabels = issues30[issueNum]['labels'][:]
+        newLabels.append(abandonedLabel)
+        r = requests.post(endpoint, json = {'labels': newLabels}, headers = headers)
