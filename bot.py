@@ -33,8 +33,19 @@ for i in range(numPages):
                 abandoned = True
                 break
         if not abandoned:
-            updated_at = issue['updated_at'].replace('Z', '')
-            then = datetime.strptime(updated_at, dateformat)
+            commentsUrl = issue['comments_url']
+            comments = requests.get(commentsUrl, headers = headers).json()
+            numComments = len(comments)
+            lastUpdated = issue['updated_at'].replace('Z', '')
+            if numComments > 0:
+                lastComment = comments[numComments-1]['body']
+                if lastComment == updateComment:
+                    if numComments > 1:
+                        nextToLastComment = comments[numComments-2]
+                        lastUpdated = nextToLastComment['updated_at'].replace('Z', '')
+                    else:
+                        lastUpdated = issue['created_at'].replace('Z', '')
+            then = datetime.strptime(lastUpdated, dateformat)
             daysSince = (now - then).days
             number = issue['number']
             if daysSince > 30:
