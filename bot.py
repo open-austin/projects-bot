@@ -11,7 +11,7 @@ url = 'https://api.github.com/repos/open-austin/project-ideas/issues'
 headers = {'Authorization': 'token ' + os.environ['GITHUB_TOKEN']}
 issues14 = {}
 issues30 = {}
-updateComment = 'Hello, we\'re the Open Austin Project Team. We\'ve noticed there hasn\'t been any activity on this thread for the past two weeks. Can you post an update, however small, on any recent activity or if help is needed in any way? If more time passes without an update, we will label this idea as "inactive".'
+updateComment = 'Hello, we\'re the Open Austin Project Team. We\'ve noticed there hasn\'t been any activity on this thread for the past two weeks. Can you post an update, however small, on any recent activity or if help is needed in any way? If more time passes without an update, we will label this idea as "Abandoned and needs love".'
 
 # Build lists of non-abandoned issues with no updates
 dateformat = '%Y-%m-%dT%H:%M:%S'
